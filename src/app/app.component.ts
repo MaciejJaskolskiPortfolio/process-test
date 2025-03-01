@@ -8,10 +8,10 @@ import {CircleNodeComponent} from "./circle-node/circle-node.component";
 })
 export class AppComponent {
   nodes: GraphNode[] = [
-    { id: '0', component: CircleNodeComponent, fx: 0, fy: 200 },
-    { id: '1', component: CircleNodeComponent, fx: 100, fy: 200 },
-    { id: '2', component: CircleNodeComponent,  fx: 250, fy: 200 },
-    { id: '3', component: CircleNodeComponent,  fx: 400, fy: 200 }
+    { id: '0', component: CircleNodeComponent, fx: 100, fy: 200 },
+    { id: '1', component: CircleNodeComponent, fx: 250, fy: 200 },
+    { id: '2', component: CircleNodeComponent,  fx: 400, fy: 200 },
+    { id: '3', component: CircleNodeComponent,  fx: 550, fy: 200 }
   ];
 
   links: GraphLink[] = [

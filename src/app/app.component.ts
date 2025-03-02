@@ -15,10 +15,10 @@ export class AppComponent {
   ];
 
   links: GraphLink[] = [
-    { source: '0', target: '1', type: 'normal' },
+    { source: '0', target: '1', type: 'normal', icon: 'circle' },
     { source: '1', target: '2', type: 'normal' },
-    { source: '2', target: '3', type: 'normal' },
-    { source: '3', target: '1', type: 'top', color: 'green' },
-    { source: '3', target: '1', type: 'bottom', color: 'blue' },
+    { source: '2', target: '3', type: 'normal', text: 'Hello' },
+    { source: '3', target: '1', type: 'top', color: 'green', text: 'Invoice Flow' },
+    { source: '3', target: '1', type: 'bottom', color: 'blue', text: 'Flow' },
   ];
 }

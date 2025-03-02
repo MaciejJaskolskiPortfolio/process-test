@@ -87,6 +87,7 @@ export class NgxProcessGraphComponent implements AfterViewInit {
       .attr('fill', '#999')
 
     const linkGroup = svg.append('g').attr('class', 'links');
+
     const nodeElements: { [id: string]: any } = {};
 
     this.simulation = d3.forceSimulation(this.nodes)
@@ -96,7 +97,7 @@ export class NgxProcessGraphComponent implements AfterViewInit {
       .on('tick', () => this.ticked(linkGroup, nodeElements));
 
     // Draw links
-    const link = linkGroup.selectAll('.link')
+    const link = linkGroup.selectAll('.links')
       .data(this.links)
       .enter()
       .append('path') // Use path for right-angled links
@@ -105,6 +106,34 @@ export class NgxProcessGraphComponent implements AfterViewInit {
       .style('stroke-width', 2)
       .attr('fill', 'none')
       .attr('marker-end', 'url(#arrowhead)'); // Add arrowhead at the end of each link
+
+    this.links.forEach((link) => {
+      if (link.text) {
+        svg.append('text')
+          .attr('class', 'link-label')
+          .data([link])
+          .attr("dy", (d: any) => {
+            if (d.type === 'normal') {
+              return '20'
+            }
+            return d.type === 'bottom' ? 20 : -20;
+          })
+          .attr('x', (d: any) => {
+            return (d.source.fx + d.target.fx) / 2
+          })
+          .attr('y', (d: any) => {
+            const midPoint = (d.source.fy + d.target.fy) / 2;
+            if (d.type === 'normal') {
+              return midPoint
+            }
+            const shift = d.type === 'bottom' ? 60 : -60;
+            return midPoint + shift;
+          })
+          .text(function(d: any) {
+            return d.text || ''
+          });
+      }
+    })
 
     // Create Angular components dynamically for nodes
     this.nodes.forEach(node => {

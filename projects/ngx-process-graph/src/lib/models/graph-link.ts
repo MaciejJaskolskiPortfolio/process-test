@@ -3,6 +3,8 @@ export interface GraphLink {
   target: string;
   type: GraphLinkType;
   color?: string;
+  text?: string
+  icon?: string;
 }
 
 export const DEFAULT_LINK_COLOR = '#999';

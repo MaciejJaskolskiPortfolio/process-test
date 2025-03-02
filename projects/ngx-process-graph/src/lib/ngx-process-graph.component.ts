@@ -160,7 +160,6 @@ export class NgxProcessGraphComponent implements AfterViewInit {
 
   private shouldHaveArrow(link: any): boolean {
     // If the source is a midpoint node (M1, M2, etc.), don't add an arrowhead
-    console.log(link)
     return !link.target.id.startsWith('M')
   }
 

@@ -73,7 +73,7 @@ export class NgxProcessGraphComponent implements AfterViewInit {
       .attr('width', this.width)
       .attr('height', this.height);
 
-    const defs = svg.append('defs'); // Define arrow markers
+    const defs = svg.append('defs');
     defs.append('marker')
       .attr('id', 'arrowhead')
       .attr('viewBox', '0 0 10 10')
@@ -84,15 +84,17 @@ export class NgxProcessGraphComponent implements AfterViewInit {
       .attr('orient', 'auto')
       .append('path')
       .attr('d', 'M 0 0 L 10 5 L 0 10 Z')
-      .attr('fill', '#999')
+      .attr('fill', '#999');
 
     const linkGroup = svg.append('g').attr('class', 'links');
-
     const nodeElements: { [id: string]: any } = {};
 
+    // Create midpoint nodes dynamically
+    this.processMidpointNodes();
+
     this.simulation = d3.forceSimulation(this.nodes)
-      .force('link', d3.forceLink(this.links).id(d => (d as GraphNode).id).distance(this.nodeSpacing))
-      .force('charge', d3.forceManyBody().strength(0)) // Disable movement
+      .force('link', d3.forceLink(this.links).id(d => (d as GraphNode).id).distance(120))
+      .force('charge', d3.forceManyBody().strength(-300))
       .force('center', d3.forceCenter(this.width / 2, this.height / 2))
       .on('tick', () => this.ticked(linkGroup, nodeElements));
 
@@ -100,12 +102,12 @@ export class NgxProcessGraphComponent implements AfterViewInit {
     const link = linkGroup.selectAll('.links')
       .data(this.links)
       .enter()
-      .append('path') // Use path for right-angled links
+      .append('path')
       .attr('class', 'link')
       .style('stroke', (d: any) => d.color || DEFAULT_LINK_COLOR)
       .style('stroke-width', 2)
       .attr('fill', 'none')
-      .attr('marker-end', 'url(#arrowhead)'); // Add arrowhead at the end of each link
+      .attr('marker-end', d => this.shouldHaveArrow(d) ? 'url(#arrowhead)' : ''); // Apply arrow selectively
 
     this.links.forEach((link) => {
       if (link.text) {
@@ -137,35 +139,68 @@ export class NgxProcessGraphComponent implements AfterViewInit {
 
     // Create Angular components dynamically for nodes
     this.nodes.forEach(node => {
+      if (!node.component) return
       const componentFactory = this.resolver.resolveComponentFactory(node.component);
       const componentRef = this.nodeContainer.createComponent(componentFactory);
       componentRef.instance.label = `Node ${node.id}`;
       nodeElements[node.id] = componentRef.location.nativeElement;
 
-      // Set initial styles
       Object.assign(nodeElements[node.id].style, {
         position: 'absolute',
         width: '80px',
         height: '80px',
         textAlign: 'center',
         transition: 'transform 0.3s',
+        pointerEvents: 'none',
       });
     });
 
-    this.simulation.alpha(1).restart(); // Restart to apply new positions
+    this.simulation.alpha(1).restart();
   }
 
-  private ticked(linkGroup: any, nodeElements: { [id: string]: any }) {
-    linkGroup.selectAll('.link')
-      .attr('d', (d: any) => this.getLinkPath(d))
+  private shouldHaveArrow(link: any): boolean {
+    // If the source is a midpoint node (M1, M2, etc.), don't add an arrowhead
+    console.log(link)
+    return !link.target.id.startsWith('M')
+  }
 
-    // Position Angular nodes absolutely over the SVG
-    this.nodes.forEach(node => {
-      const element = nodeElements[node.id];
-      if (element) {
-        element.style.transform = `translate(${node.fx - 40}px, ${node.fy - 40}px)`;
+  private ticked(linkGroup: any, nodeElements: any) {
+    linkGroup.selectAll('.link')
+      .attr('d', (d: any) => this.getLShapedPath(d));
+
+    Object.entries(nodeElements).forEach(([id, element]) => {
+      const node = this.nodes.find(n => n.id === id);
+      if (node) {
+        const element = nodeElements[node.id];
+        element.style.transform = `translate(${node.x! - 40}px, ${node.y! - 40}px)`;
       }
     });
+  }
+
+  private getLShapedPath(link: any) {
+    const sourceX = link.source.x;
+    const sourceY = link.source.y;
+    const targetX = link.target.x;
+    const targetY = link.target.y;
+
+    const isMidpointNode = link.target.id.startsWith('M');
+
+    if (isMidpointNode && link.type === 'midpoint') {
+      // Determine if the link should go UP or DOWN
+      const isGoingDown = targetY > sourceY;
+
+      // Offsets
+      const verticalOffset = isGoingDown ? 40 : -40; // Move down 40px or up 40px
+      const midX = sourceX + (targetX - sourceX); // Halfway horizontally
+      const midY = sourceY + verticalOffset; // Move first in Y direction
+
+      return `M ${sourceX},${sourceY}
+          L ${midX},${sourceY}
+          L ${midX},${targetY}`;
+    } else {
+      // Default straight link for normal connections
+      return this.getLinkPath(link)
+    }
   }
 
   private getLinkPath(d: any) {
@@ -202,7 +237,38 @@ export class NgxProcessGraphComponent implements AfterViewInit {
     }
 
     // Fallback for generic links
-    return `M${source.fx},${source.fy} L${target.fx},${target.fy}`;
+    return `M${source.fx - 40},${source.fy} L${target.fx - 40},${target.fy}`;
+  }
+
+  private processMidpointNodes() {
+    const newNodes: GraphNode[] = [];
+    const newLinks: GraphLink[] = [];
+
+    this.links.forEach(link => {
+      if (link.midpointNodeId) {
+        // Compute midpoint coordinates
+        const sourceNode = this.nodes.find(n => n.id === link.source);
+        const targetNode = this.nodes.find(n => n.id === link.target);
+        if (!sourceNode || !targetNode) return;
+
+        const midX = (sourceNode.fx + targetNode.fx) / 2;
+        const midY = (sourceNode.fy + targetNode.fy) / 2;
+
+        // Create the midpoint node
+        const midpointNode = { id: link.midpointNodeId, fx: midX, fy: midY };
+        newNodes.push(midpointNode as GraphNode);
+
+        // Replace the original link with two new links
+        newLinks.push({ source: link.source, target: midpointNode.id } as GraphLink);
+        newLinks.push({ source: midpointNode.id, target: link.target } as GraphLink);
+      } else {
+        newLinks.push(link);
+      }
+    });
+
+    // Append new nodes and links
+    this.nodes.push(...newNodes);
+    this.links = newLinks;
   }
 
 }

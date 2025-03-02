@@ -5,8 +5,9 @@ export interface GraphLink {
   color?: string;
   text?: string
   icon?: string;
+  midpointNodeId?: string;
 }
 
 export const DEFAULT_LINK_COLOR = '#999';
 
-export type GraphLinkType = 'normal' | 'top' | 'bottom';
+export type GraphLinkType = 'normal' | 'top' | 'bottom' | 'midpoint';

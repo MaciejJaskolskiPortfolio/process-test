@@ -11,14 +11,16 @@ export class AppComponent {
     { id: '0', component: CircleNodeComponent, fx: 100, fy: 200 },
     { id: '1', component: CircleNodeComponent, fx: 250, fy: 200 },
     { id: '2', component: CircleNodeComponent,  fx: 400, fy: 200 },
-    { id: '3', component: CircleNodeComponent,  fx: 550, fy: 200 }
+    { id: '3', component: CircleNodeComponent,  fx: 550, fy: 200 },
+    { id: '4', component: CircleNodeComponent,  fx: 400, fy: 350 }
   ];
 
   links: GraphLink[] = [
     { source: '0', target: '1', type: 'normal', icon: 'circle' },
-    { source: '1', target: '2', type: 'normal' },
-    { source: '2', target: '3', type: 'normal', text: 'Hello' },
-    { source: '3', target: '1', type: 'top', color: 'green', text: 'Invoice Flow' },
-    { source: '3', target: '1', type: 'bottom', color: 'blue', text: 'Flow' },
+    { source: '1', target: '2', type: 'normal', midpointNodeId: 'M1' },
+    { source: '2', target: '3', type: 'normal', text: 'Hello', midpointNodeId: 'M2' },
+    { source: '3', target: '1', type: 'top', text: 'Hello', color: 'green' },
+    { source: '4', target: 'M1', type: 'midpoint'  },
+    { source: '4', target: 'M2', type: 'midpoint' },
   ];
 }

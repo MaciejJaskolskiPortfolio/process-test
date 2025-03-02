@@ -92,11 +92,23 @@ export class NgxProcessGraphComponent implements AfterViewInit {
     // Create midpoint nodes dynamically
     this.processMidpointNodes();
 
+    const iconGroup = svg.append('g').attr('class', 'icons');
+
+    iconGroup.selectAll('.link-icon')
+      .data(this.links.filter(d => d.icon)) // Only add icons where specified
+      .enter()
+      .append('text')
+      .attr('class', 'link-icon')
+      .attr('text-anchor', 'middle')
+      .attr('alignment-baseline', 'middle')
+      .style('font-size', '14px')
+      .text(d => d.icon || ''); // Set the icon
+
     this.simulation = d3.forceSimulation(this.nodes)
       .force('link', d3.forceLink(this.links).id(d => (d as GraphNode).id).distance(120))
       .force('charge', d3.forceManyBody().strength(-300))
       .force('center', d3.forceCenter(this.width / 2, this.height / 2))
-      .on('tick', () => this.ticked(linkGroup, nodeElements));
+      .on('tick', () => this.ticked(linkGroup, nodeElements, iconGroup));
 
     // Draw links
     const link = linkGroup.selectAll('.links')
@@ -163,9 +175,14 @@ export class NgxProcessGraphComponent implements AfterViewInit {
     return !link.target.id.startsWith('M')
   }
 
-  private ticked(linkGroup: any, nodeElements: any) {
+  private ticked(linkGroup: any, nodeElements: any, iconGroup: any) {
     linkGroup.selectAll('.link')
       .attr('d', (d: any) => this.getLShapedPath(d));
+
+    // Update icon positions
+    iconGroup.selectAll('.link-icon')
+      .attr('x', (d: any) => (d.source.x + d.target.x) / 2 - 10) // Center horizontally
+      .attr('y', (d: any) => (d.source.y + d.target.y) / 2 - 10); // Center vertically
 
     Object.entries(nodeElements).forEach(([id, element]) => {
       const node = this.nodes.find(n => n.id === id);
